@@ -3,7 +3,7 @@ import { test, expect } from "@playwright/test";
 test("replay, missing sensor distinction and local reports", async ({
   page,
 }) => {
-  await page.goto("/");
+  await page.goto("/?mode=demo");
   await expect(
     page.getByRole("heading", { name: "작업환경 관제", exact: true }),
   ).toBeVisible();
@@ -59,7 +59,7 @@ test("scenario selection, replay end, responsive layout and screenshots", async 
   const errors: string[] = [];
   page.on("pageerror", (e) => errors.push(e.message));
   await page.setViewportSize({ width: 1440, height: 1080 });
-  await page.goto("/");
+  await page.goto("/?mode=demo");
   await page.getByRole("button", { name: "실험·재생", exact: true }).click();
   for (const name of [
     "작업자 활동",
@@ -106,7 +106,7 @@ test("scenario selection, replay end, responsive layout and screenshots", async 
 
 test("replay speed and automatic completion", async ({ page }) => {
   await page.clock.install();
-  await page.goto("/");
+  await page.goto("/?mode=demo");
   await page.getByRole("combobox", { name: "재생 배속" }).selectOption("4");
   await page.getByRole("button", { name: "재생", exact: true }).click();
   await page.clock.runFor(1000);

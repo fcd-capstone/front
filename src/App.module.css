@@ -976,3 +976,169 @@ td {
     padding-right: 18px;
   }
 }
+.demoReturn {
+  display: block;
+  margin-top: 24px;
+  padding: 12px 5px;
+  color: #74cdb3;
+  font-size: 10px;
+  line-height: 1.8;
+}
+.demoLink {
+  color: #7ad6b8;
+  font-size: 12px;
+}
+.apiError {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 16px;
+  border: 1px solid #825143;
+  border-radius: 8px;
+  background: #302322;
+  color: #edc0ad;
+  margin-bottom: 18px;
+}
+.apiError strong {
+  font-size: 12px;
+}
+.apiError p {
+  font-size: 11px;
+  margin-top: 8px;
+  overflow-wrap: anywhere;
+}
+.apiError small {
+  font-size: 10px;
+  display: block;
+  margin-top: 8px;
+  overflow-wrap: anywhere;
+}
+.apiError button {
+  padding: 8px 12px;
+  white-space: nowrap;
+}
+.datasetSelect {
+  max-width: 330px;
+  flex: 1;
+}
+.seekRow {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  width: 100%;
+  padding-top: 10px;
+  border-top: 1px solid #263442;
+}
+.seekRow input {
+  min-width: 50px;
+}
+.seekButton {
+  padding: 7px 12px;
+  font-size: 11px;
+}
+.sessionMeta {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 10px;
+  line-height: 1.8;
+  color: #8fa6b8;
+  margin: -10px 2px 22px;
+}
+.sensorReading > small {
+  display: block;
+  margin-top: 6px;
+  font-size: 9px;
+}
+.qualityMuted {
+  color: #91a4b5;
+}
+.qualityCaution {
+  color: #efba73;
+}
+.nodeTimestamp {
+  font-size: 9px;
+  color: #7b91a4;
+  margin-top: 20px;
+}
+.datasetGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  padding: 0 22px 22px;
+  gap: 16px;
+}
+.datasetGrid h3 {
+  overflow-wrap: anywhere;
+}
+.integrationInfo {
+  padding: 0 22px 24px;
+  color: #93a7ba;
+  font-size: 12px;
+  line-height: 1.9;
+}
+.integrationInfo p + p {
+  margin-top: 12px;
+}
+.integrationInfo code {
+  overflow-wrap: anywhere;
+}
+button:disabled {
+  cursor: not-allowed;
+  opacity: 0.42;
+}
+button:disabled:hover {
+  filter: none;
+}
+select:disabled,
+input:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+@media (max-width: 850px) {
+  .demoReturn {
+    position: absolute;
+    right: 20px;
+    top: 14px;
+    margin: 0;
+    font-size: 9px;
+    padding: 5px;
+  }
+  .sidebar {
+    position: relative;
+  }
+  .sessionMeta {
+    flex-direction: column;
+    gap: 3px;
+  }
+  .datasetSelect {
+    max-width: 100%;
+  }
+}
+@media (max-width: 520px) {
+  .datasetGrid {
+    grid-template-columns: 1fr;
+  }
+  .seekRow {
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+  .seekRow input {
+    flex-basis: 50%;
+  }
+  .seekButton {
+    margin-left: auto;
+  }
+  .apiError {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+  .replayBar > .datasetSelect:first-of-type {
+    max-width: 100%;
+    min-width: 100%;
+  }
+  .sidebar .demoReturn {
+    max-width: 135px;
+    text-align: right;
+  }
+}

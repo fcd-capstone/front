@@ -1,81 +1,107 @@
-# React + TypeScript + Vite
+# FCD 관제 대시보드
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+다중 센서 기반 제조 작업환경 관제 시스템의 프론트엔드입니다. 기본 화면은 실제 백엔드의 과거 CSV를 재생하며, 기존 가상 시나리오는 별도 데모로 분리했습니다.
 
-Currently, two official plugins are available:
-
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
-
-## React Compiler
-
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the Oxlint configuration
-
-If you are developing a production application, we recommend enabling type-aware lint rules by installing `oxlint-tsgolint` and editing `.oxlintrc.json`:
-
-```json
-{
-  "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": ["react", "typescript", "oxc"],
-  "options": {
-    "typeAware": true
-  },
-  "rules": {
-    "react/rules-of-hooks": "error",
-    "react/only-export-components": ["warn", { "allowConstantExport": true }]
-  }
-}
-```
-
-See the [Oxlint rules documentation](https://oxc.rs/docs/guide/usage/linter/rules) for the full list of rules and categories.
-
-## 실행 방법
+## 실행
 
 Node.js 24 LTS와 npm을 사용합니다.
 
 ```sh
 npm ci
+cp .env.example .env.local
 npm run dev
 ```
 
-개발 서버 주소는 터미널에 표시됩니다. 기본 주소는 `http://localhost:5173`입니다.
+- 프론트: `http://localhost:5173`
+- 백엔드 기본 주소: `http://localhost:8000/api/v1`
+- API 주소는 `.env.local`의 `VITE_API_BASE_URL`로 설정합니다. 변경 후 Vite를 재시작하세요.
+- 백엔드 저장소의 README에 따라 Python 가상환경과 의존성을 설치한 후, 백엔드 폴더에서 아래 서버를 별도로 실행하세요.
 
 ```sh
-npm run build     # TypeScript 검사 및 배포용 dist 생성
-npm run preview   # 빌드 결과 확인
-npm run lint      # 정적 검사
-npm run test:e2e  # 브라우저 동작 검증
+python -m uvicorn app.server:app --host 127.0.0.1 --port 8000
 ```
 
-브라우저 테스트는 로컬에서 설치된 Google Chrome을 사용합니다. CI에서는 `npx playwright install --with-deps chromium`으로 브라우저를 준비합니다.
+백엔드는 `http://localhost:5173`과 `http://127.0.0.1:5173`을 CORS 허용합니다. 다른 프론트 주소·포트를 사용하면 백엔드의 허용 목록도 수정해야 합니다.
 
-## 기술 스택
+## 실제 CSV 재생
 
-- React + TypeScript + Vite
-- CSS Modules + CSS 변수 기반 다크 테마
-- TanStack Query + 데이터 소스 인터페이스
-- Recharts 시계열 차트 (지연 로딩)
-- Lucide 아이콘
-- Playwright 브라우저 테스트, Oxlint 정적 검사, Prettier 포맷
+1. 기본 화면(`/`)에서 데이터셋을 선택하고 **새 세션 생성**을 누릅니다.
+2. **재생**을 누르면 서버 시계 기준으로 CSV가 재생됩니다.
+3. 일시정지, 중지, 처음으로, 0.5/1/2/4/5/10배속을 지원합니다.
+4. 시점 슬라이더로 위치를 고른 후 **해당 시점으로 이동**을 누릅니다. 백엔드가 세션을 일시정지하고 이전 수신 구간을 초기화하므로, 이동 후 다시 재생해야 측정값과 그래프가 나타납니다.
+5. 완료·중지된 세션은 **다시 재생**으로 처음부터 시작할 수 있습니다.
 
-## 현재 구현
+데이터셋 선택만으로 현재 세션은 변경되지 않습니다. 파일 변경 후 새 세션을 생성하세요. 세션은 서버 메모리에만 있으므로 백엔드 재시작 후 새 세션이 필요합니다. 페이지 새로고침도 새 세션 생성부터 시작합니다.
 
-- **대시보드**: 노드 A·B 측정값, 센서 선택 비교 그래프, 가상 원인과 근거·신뢰도·우선순위
-- **이벤트 이력**: 5개 가상 시나리오의 예시 이벤트, 처리 상태 필터, 상세 조회
-- **실험·재생**: 원인 5종 선택, 2분 가상 데이터 재생, 일시정지·초기화·시점 이동·1/2/4배속
-- **조치 보고**: 미확인·확인 중·조치 완료와 메모를 브라우저 localStorage에 저장
-- 데스크톱·모바일 레이아웃, 미설치·결측 구분, 결측 그래프 단절
+### 지원 범위
 
-가상 시나리오는 30초부터 이상 패턴을 발생시킵니다. 차트와 센서 카드의 수치는 같은 생성 함수를 사용합니다. 이벤트 목록은 전체 예시 목록이며 실제 발생 로그가 아닙니다. 고정된 점수와 신뢰도는 모델 평가 결과가 아닙니다. 정상 관찰 구간의 값 역시 정상 기준값을 정의하지 않습니다.
+| 기능                          | 현재 동작                                 |
+| ----------------------------- | ----------------------------------------- |
+| 데이터셋·세션·재생 제어       | 실제 API 연동                             |
+| 노드별 현재 측정값·품질 상태  | 실제 snapshot 연동                        |
+| 최근 5분 그래프               | 실제 series 연동, 최대 약 500개 시간 버킷 |
+| 화면 실시간 갱신              | `snapshot.updated` SSE + 1초 REST 폴링    |
+| 원인 판별·신뢰도·우선순위     | 백엔드 미지원으로 표시                    |
+| 조치 보고·실험 라벨·MQTT live | 백엔드 미지원으로 표시                    |
 
-## API 연동 준비
+실제 데이터 화면에서 원인·신뢰도·점수를 생성하거나 로컬 데모 보고를 혼합하지 않습니다. 이벤트 API의 빈 배열은 정상 판정이 아닙니다. 백엔드에 아직 없는 판별·조치·라벨 API는 요청하지 않습니다.
 
-- `src/domain/types.ts`: 측정값·이벤트·조치 보고 및 `SensorSource` 인터페이스
-- `src/data/mock.ts`: 가상 시나리오, 센서 메타데이터, 현재 목업 데이터 소스
-- `src/App.tsx`: 화면·재생·로컬 보고 상태
-- `src/SensorChart.tsx`: 시계열 차트
-- `docs/api-coordination.md`: 백엔드와 확정할 연동 항목
+### 데이터 표시 규칙
 
-현재 실제 HTTP 요청, MQTT 연결, CSV 업로드, 모델 학습은 구현하지 않았습니다. API 연동 시 센서 소스 외에 이벤트·조치·재생 제어도 서버 데이터로 전환해야 합니다. 실제 실험 라벨 조회는 API 제공 후 연결합니다.
+- 노드 A는 기준 노드, 노드 B는 도어 쪽입니다.
+- 최신 백엔드 규칙에 따라 **B 습도는 사용 안 함**, **A 습도는 현재값 카드 전용**입니다. 습도 시계열은 요청하지 않습니다.
+- B의 CO₂·차압은 미설치입니다. 해당 시계열도 요청하지 않습니다.
+- 추정 CO₂(`eco2`)와 실측 CO₂(`co2`)를 구분합니다.
+- 정상 수신·결측·사용 안 함·미설치·측정 상한·예열 중·갱신 지연을 구분합니다.
+- 카드에는 예열·포화 수치와 품질을 함께 보여주고, 그래프는 `quality=ok`인 값만 표시합니다. 결측을 0으로 바꾸거나 선으로 연결하지 않습니다.
+- B 보정은 서버의 v2 보정값을 그대로 사용하며 프론트에서 중복 보정하지 않습니다. 차압 영점·부호 보정은 백엔드에서 확정 전입니다.
+- Unix 초 단위 시각을 KST로 표시합니다. 재생 데이터 수신 상태는 실제 장비의 온라인 상태가 아닙니다.
+- 샘플 CSV는 형식 확인용이며 정상 기준값·학습 데이터가 아닙니다. 보정 CSV의 첫 30분은 예열 구간으로 집계에서 제외됩니다.
+- 시점 이동 시 증가하는 `generation`과 세션 ID를 검사해 이전 SSE 응답을 무시합니다. REST·series 요청은 제어 시 취소합니다.
+
+## 가상 데모
+
+`/?mode=demo` 또는 사이드바 **가상 시나리오 데모 열기**에서 기존 프로토타입을 확인할 수 있습니다.
+
+- 원인 5종 선택, 2분 가상 재생, 정지·배속·시점 이동
+- 가상 원인·근거·우선순위, 예시 이벤트 이력
+- 가상 조치 보고·메모는 해당 브라우저 localStorage에만 저장
+
+가상 데모는 백엔드를 호출하지 않으며 실제 모델의 판정·평가 결과가 아닙니다.
+
+## 검증
+
+```sh
+npm run build
+npm run lint
+npm run test:e2e
+```
+
+기본 E2E는 API 응답·장애를 재현하는 테스트와 가상 데모 회귀 테스트를 실행합니다. 로컬에서는 설치된 Google Chrome을 사용하며, CI는 `npx playwright install --with-deps chromium`으로 브라우저를 준비합니다.
+
+실제 백엔드와 기본 제공 샘플·보정 CSV를 적재한 상태에서는 다음 명령으로 서버와의 통합 테스트도 실행합니다.
+
+```sh
+FCD_BACKEND_E2E=1 npm run test:e2e
+```
+
+실제 서버 테스트는 현재 기본 URL과 기본 제공 데이터셋 ID `1`, `2`를 기준으로 합니다. 데이터셋 구성이 다른 환경에서는 테스트 값을 맞추세요. 테스트가 생성한 세션은 서버 메모리에만 남습니다.
+
+## 구조 및 기술 스택
+
+- React + TypeScript + Vite, CSS Modules, TanStack Query, Recharts, Lucide
+- Playwright, Oxlint, Prettier
+- `src/backend/BackendApp.tsx`: 실제 CSV 관제 화면
+- `src/backend/useReplay.ts`: 세션 제어·조회·SSE·시계열
+- `src/data/api.ts`: 백엔드 v0.2 요청·응답 타입과 HTTP 클라이언트
+- `src/domain/sensors.ts`: 공통 센서 이름·단위
+- `src/MockApp.tsx`, `src/data/mock.ts`: 독립된 가상 데모
+- `src/SensorChart.tsx`: 실제·가상 공통 시계열 차트
+- `docs/api-coordination.md`: 확인한 계약과 후속 협의 항목
+
+## 일정
+
+- 2026-11-18: 실험 완료 목표, 기본 대시보드 우선 준비
+- 2026-11-26: 개발·실험 최대한 완료
+- 2026-11-27 ~ 2026-12-01: 발표 자료·시연 준비
+- 2026-12-02: 발표 및 제출

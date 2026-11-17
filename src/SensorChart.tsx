@@ -9,15 +9,18 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import { duration } from "./data/mock";
 const elapsedText = (n: number) =>
   `${String(Math.floor(n / 60)).padStart(2, "0")}:${String(n % 60).padStart(2, "0")}`;
 export default function SensorChart({
   chart,
   position,
+  timeDomain = [0, 120],
+  timestampMode = false,
 }: {
   chart: { t: number; a: number | null; b: number | null }[];
   position: number;
+  timeDomain?: [number, number];
+  timestampMode?: boolean;
 }) {
   return (
     <ResponsiveContainer width="100%" height="100%">
@@ -33,9 +36,17 @@ export default function SensorChart({
         <XAxis
           dataKey="t"
           type="number"
-          domain={[0, duration]}
-          ticks={[0, 30, 60, 90, 120]}
-          tickFormatter={elapsedText}
+          domain={timeDomain}
+          ticks={timestampMode ? undefined : [0, 30, 60, 90, 120]}
+          tickFormatter={
+            timestampMode
+              ? (ts) =>
+                  new Date(ts * 1000).toLocaleTimeString("ko-KR", {
+                    timeZone: "Asia/Seoul",
+                    hour12: false,
+                  })
+              : elapsedText
+          }
           stroke="#647587"
           tickLine={false}
           axisLine={false}
@@ -49,7 +60,14 @@ export default function SensorChart({
           domain={["auto", "auto"]}
         />
         <Tooltip
-          labelFormatter={(v) => `재생 ${elapsedText(Number(v))}`}
+          labelFormatter={(v) =>
+            timestampMode
+              ? new Date(Number(v) * 1000).toLocaleString("ko-KR", {
+                  timeZone: "Asia/Seoul",
+                  hour12: false,
+                })
+              : `재생 ${elapsedText(Number(v))}`
+          }
           contentStyle={{
             background: "#15212d",
             border: "1px solid #344456",
@@ -57,7 +75,7 @@ export default function SensorChart({
             color: "#e9f0f7",
           }}
         />
-        {position >= 30 && (
+        {!timestampMode && position >= 30 && (
           <ReferenceArea
             x1={30}
             x2={position}
