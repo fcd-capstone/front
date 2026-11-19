@@ -118,6 +118,24 @@ test("real backend CSV replay, server controls, warmup and measured cards", asyn
   await page.getByRole("button", { name: "일시정지", exact: true }).click();
   await page.getByLabel("그래프 센서").selectOption("co2");
   await expect(page.getByRole("alert")).toHaveCount(0);
+  await page.getByRole("button", { name: "실험·재생", exact: true }).click();
+  await page.getByLabel("데이터셋 선택").selectOption("3");
+  await expect(
+    page.getByRole("heading", { name: "실험 회차 라벨", exact: true }),
+  ).toBeVisible();
+  await expect(
+    page.getByText("PM 제외 (오프라인 평가)", { exact: true }),
+  ).toBeVisible();
+  await expect(
+    page.getByText("A 모션 제외 (오프라인 평가)", { exact: true }),
+  ).toBeVisible();
+  await page.getByRole("button", { name: "새 세션 생성", exact: true }).click();
+  await page.getByRole("button", { name: "대시보드", exact: true }).click();
+  await expect(page.getByText("규칙 미설정", { exact: true })).toBeVisible();
+  await page.getByRole("button", { name: "이벤트 이력", exact: true }).click();
+  await expect(
+    page.getByText("현재 세션의 분석이 비활성화되어 있습니다", { exact: true }),
+  ).toBeVisible();
   expect(failures).toEqual([]);
   expect(pageErrors).toEqual([]);
 });

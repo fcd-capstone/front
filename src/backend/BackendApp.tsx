@@ -20,6 +20,10 @@ import { apiBase, type SeriesSensor, type Quality } from "../data/api";
 import { metrics } from "../domain/sensors";
 import type { Metric, NodeId } from "../domain/types";
 import { useReplay } from "./useReplay";
+import { useEvents } from "./useEvents";
+import { analysisLabel, supportsEvents } from "./analysis";
+import EventPanel from "./EventPanel";
+import LabelPanel from "./LabelPanel";
 import styles from "../App.module.css";
 const SensorChart = lazy(() => import("../SensorChart"));
 const stateNames = {
@@ -67,12 +71,59 @@ export default function BackendApp() {
   const [seek, setSeek] = useState<number | null>(null);
   const replay = useReplay(sensor);
   const { session, snapshot, operation, sessionGone } = replay;
-  const busy = operation.isPending;
+  const [selection, setSelection] = useState<{
+    sessionId: string;
+    generation: number;
+    eventId: string;
+  } | null>(null);
+  const selectedEventId =
+    selection?.sessionId === session?.id &&
+    selection?.generation === session?.generation
+      ? selection?.eventId || null
+      : null;
+  const eventsSupported = supportsEvents(replay.health.data?.version);
+  const analysisEnabled =
+    !!session &&
+    !sessionGone &&
+    !operation.isPending &&
+    eventsSupported &&
+    !!snapshot &&
+    snapshot.analysis.status !== "disabled";
+  const eventModel = useEvents(
+    session?.id,
+    session?.generation,
+    analysisEnabled,
+    selectedEventId,
+  );
+  const busy = operation.isPending || eventModel.report.isPending;
+  const analysisState = analysisLabel(
+    sessionGone ? undefined : session,
+    sessionGone ? undefined : snapshot,
+  );
+  const activeEvents = analysisEnabled
+    ? (eventModel.events.data || []).filter(
+        (event) => event.lifecycle === "active",
+      )
+    : [];
+  const highestPriority = activeEvents.length
+    ? Math.max(...activeEvents.map((event) => event.priority.score))
+    : null;
+  function selectEvent(eventId: string) {
+    if (session) {
+      eventModel.report.reset();
+      setSelection({
+        sessionId: session.id,
+        generation: session.generation,
+        eventId,
+      });
+    }
+  }
   const datasets = replay.datasets.data || [];
   const selectedDataset =
     datasets.find((d) => d.id === datasetId) || datasets[0];
   const currentDataset = datasets.find((d) => d.id === session?.dataset_id);
-  const validSnapshot = !sessionGone && !busy ? snapshot : undefined;
+  const validSnapshot =
+    !sessionGone && !operation.isPending ? snapshot : undefined;
   const duration = session ? Math.max(0, session.end_ts - session.start_ts) : 0;
   const elapsed = session
     ? Math.min(
@@ -187,7 +238,7 @@ export default function BackendApp() {
         <div className={styles.sidebarBottom}>
           <ShieldCheck size={19} />
           <div>
-            FCD 관제 시스템<small>CSV 연동 v0.2 · 라이브 미지원</small>
+            FCD 관제 시스템<small>CSV·이벤트 연동 · 라이브 미지원</small>
           </div>
         </div>
       </aside>
@@ -237,9 +288,12 @@ export default function BackendApp() {
           <div className={styles.notice}>
             <CircleHelp size={16} />
             <span>
-              과거 측정 CSV 재생 화면입니다. 라이브 연결·원인 판별·우선순위·조치
-              보고는 현재 백엔드에서 지원하지 않습니다. 이벤트가 없다는 것은
-              정상 판정이 아닙니다.
+              과거 측정 CSV 재생 화면입니다.{" "}
+              {eventsSupported
+                ? "설정 기반 규칙 판별·설정 점수는 검증 전이며 신뢰도는 제공되지 않습니다. 규칙 비활성 세션에는 판별 결과가 없습니다."
+                : "현재 서버는 원인 판별을 지원하지 않습니다."}{" "}
+              이벤트가 없다는 것은 정상 판정이 아닙니다. 라이브 연결은
+              미지원입니다.
             </span>
           </div>
           {error && (
@@ -449,17 +503,26 @@ export default function BackendApp() {
                   <span>
                     이상 원인 판별 <Activity size={16} />
                   </span>
-                  <strong className={styles.statusValue}>미지원</strong>
-                  <p>분석 엔진 연동 대기</p>
+                  <strong className={styles.statusValue}>
+                    {analysisState.title}
+                  </strong>
+                  <p>{analysisState.description}</p>
                 </div>
                 <div className={styles.summaryCard}>
                   <span>
                     대응 우선순위 <Bell size={16} />
                   </span>
                   <strong>
-                    —<small>산출 대기</small>
+                    {highestPriority ?? "—"}
+                    <small>
+                      {highestPriority === null ? "산출 대기" : "검증 전 설정"}
+                    </small>
                   </strong>
-                  <p>점수·신뢰도를 임의 생성하지 않습니다.</p>
+                  <p>
+                    {analysisEnabled
+                      ? `활성 이벤트 ${snapshot?.active_event_count ?? 0}개 · 고정 설정 점수`
+                      : "현재 세션에 활성 판별 결과가 없습니다."}
+                  </p>
                 </div>
                 <div className={styles.summaryCard}>
                   <span>
@@ -556,8 +619,18 @@ export default function BackendApp() {
                   )}
                 </div>
                 <div className={styles.chartFooter}>
-                  <span>노드 B는 서버의 v2 보정값을 사용합니다.</span>
-                  <span>차압 영점·부호 보정은 확정 전입니다.</span>
+                  <span>
+                    {supportsEvents(replay.health.data?.version) &&
+                    Number(replay.health.data?.version.split(".")[1]) >= 4
+                      ? "노드 B는 서버의 v3 보정값을 사용합니다. PM은 무보정입니다."
+                      : "노드 B 보정은 서버에서 적용합니다."}
+                  </span>
+                  <span>
+                    {supportsEvents(replay.health.data?.version) &&
+                    Number(replay.health.data?.version.split(".")[1]) >= 4
+                      ? "차압은 원본 표시 · 분석에서는 부호 반전"
+                      : "차압 보정 정책은 서버 설정을 따릅니다."}
+                  </span>
                 </div>
               </section>
               <section className={styles.panel}>
@@ -682,25 +755,18 @@ export default function BackendApp() {
               </section>
             </>
           )}
-          {page === "이벤트 이력" && (
-            <section className={styles.panel}>
-              <div className={styles.panelHeading}>
-                <h2>이상 이벤트 및 조치 보고</h2>
-                <span className={styles.demoBadge}>백엔드 미지원</span>
-              </div>
-              <div className={styles.empty}>
-                <ShieldCheck size={32} />
-                <strong>현재 원인 판별 결과가 제공되지 않습니다</strong>
-                <p>
-                  이벤트 API의 빈 목록은 정상 상태를 의미하지 않습니다.
-                  <br />
-                  판별·우선순위·보고 API가 준비되면 이 화면에 연결합니다.
-                </p>
-                <a className={styles.demoLink} href="/?mode=demo">
-                  가상 데모에서 UI 확인하기 →
-                </a>
-              </div>
-            </section>
+          {(page === "이벤트 이력" ||
+            (page === "대시보드" && analysisEnabled)) && (
+            <EventPanel
+              key={`${session?.id}:${session?.generation}`}
+              model={eventModel}
+              enabled={analysisEnabled}
+              reason={analysisState.description}
+              busy={operation.isPending}
+              onSelect={selectEvent}
+              selectedId={selectedEventId}
+              compact={page === "대시보드"}
+            />
           )}
           {page === "실험·재생" && (
             <>
@@ -748,12 +814,21 @@ export default function BackendApp() {
                   </div>
                 )}
               </section>
+              <LabelPanel
+                datasetId={selectedDataset?.id}
+                enabled={replay.health.data?.capabilities.labels === true}
+                experiment={selectedDataset?.kind === "experiment"}
+              />
               <section className={styles.panel}>
                 <div className={styles.panelHeading}>
                   <h2>실험 라벨 및 연동 상태</h2>
                 </div>
                 <div className={styles.integrationInfo}>
-                  <p>실험 회차·시작/종료 라벨 API는 아직 제공되지 않습니다.</p>
+                  <p>
+                    11/17 16:48 KST 이전 모션은 서버에서 제외됩니다. PM·A 모션의
+                    특정 회차 마스크는 오프라인 평가용이며 운영 재생값에 자동
+                    적용되지 않습니다.
+                  </p>
                   <p>
                     시점 이동은 세션을 일시정지하고 이전 그래프를 비웁니다. 이동
                     후 재생을 누르면 해당 시점부터 수신합니다.

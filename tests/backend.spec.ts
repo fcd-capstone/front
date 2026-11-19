@@ -271,7 +271,7 @@ test("API replay controls, quality states, stale SSE exclusion and safe failures
   ).toBe(false);
   await page.getByRole("button", { name: "이벤트 이력", exact: true }).click();
   await expect(
-    page.getByText("현재 원인 판별 결과가 제공되지 않습니다", { exact: true }),
+    page.getByText("현재 세션의 분석이 비활성화되어 있습니다", { exact: true }),
   ).toBeVisible();
   await expect(page.getByLabel("조치 메모")).toHaveCount(0);
   await page.getByRole("button", { name: "대시보드", exact: true }).click();

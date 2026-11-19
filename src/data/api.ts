@@ -1,4 +1,4 @@
-import type { NodeId, Metric } from "../domain/types";
+import type { NodeId, Metric, Cause } from "../domain/types";
 export type SeriesSensor = Exclude<Metric, "humid"> | "motion";
 export type Quality =
   | "ok"
@@ -59,7 +59,17 @@ export interface Snapshot {
       metrics: Record<Metric | "motion", SensorValue>;
     }
   >;
-  analysis: { status: string; decision_status: string };
+  analysis: {
+    status: string;
+    decision_status: string;
+    cause?: Cause | null;
+    confidence?: number | null;
+    confidence_kind?: string;
+    method?: string;
+    validation_status?: string;
+    rule_version?: string;
+    evidence?: Evidence[];
+  };
   active_event_count: number;
 }
 export interface Point {
@@ -68,6 +78,69 @@ export interface Point {
   quality: Quality;
   count: number;
 }
+
+export type HandlingStatus =
+  "new" | "acknowledged" | "in_progress" | "resolved";
+export interface Evidence {
+  sensor: string;
+  node: string;
+  feature: string;
+  observed_value: number | null;
+  unit: string | null;
+  description: string;
+}
+export interface AnalysisEvent {
+  id: string;
+  session_id: string;
+  generation: number;
+  version: number;
+  node_ids: string[];
+  cause: Cause;
+  decision_status: string;
+  confidence: number | null;
+  confidence_kind: string;
+  method: string;
+  rule_id: string;
+  rule_version: string;
+  rule_sha256: string | null;
+  validation_status: string;
+  started_ts: number;
+  detected_ts: number;
+  ended_ts: number | null;
+  lifecycle: "active" | "ended";
+  end_reason: string | null;
+  handling_status: HandlingStatus;
+  priority: {
+    score: number;
+    level: string;
+    basis: string;
+    components: unknown[];
+  };
+  evidence: Evidence[];
+  recommended_actions: string[];
+  reports: {
+    id: string;
+    handling_status: HandlingStatus;
+    note: string;
+    reported_at: number;
+  }[];
+  updated_at: number;
+}
+export interface ExperimentLabel {
+  run: number;
+  cause: Cause | "normal";
+  start_ts: number;
+  end_ts: number;
+  source: string;
+  note: string;
+  end_note: string;
+  target_node: string | null;
+  intensity: string | null;
+  excluded_reason: string | null;
+  mask_pm: boolean;
+  mask_a_motion: boolean;
+}
+
 export type Control =
   | { action: "play" | "pause" | "stop" }
   | { action: "seek"; ts: number }
@@ -187,6 +260,41 @@ export const api = {
       )
     ).points;
   },
+  events: (id: string, signal?: AbortSignal) =>
+    request<AnalysisEvent[]>(
+      `/sessions/${encodeURIComponent(id)}/events`,
+      "GET",
+      undefined,
+      signal,
+    ),
+  event: (id: string, eventId: string, signal?: AbortSignal) =>
+    request<AnalysisEvent>(
+      `/sessions/${encodeURIComponent(id)}/events/${encodeURIComponent(eventId)}`,
+      "GET",
+      undefined,
+      signal,
+    ),
+  report: (
+    id: string,
+    eventId: string,
+    body: {
+      handling_status: HandlingStatus;
+      note: string;
+      expected_version: number;
+    },
+  ) =>
+    request<AnalysisEvent>(
+      `/sessions/${encodeURIComponent(id)}/events/${encodeURIComponent(eventId)}`,
+      "PATCH",
+      body,
+    ),
+  labels: (datasetId: string, signal?: AbortSignal) =>
+    request<ExperimentLabel[]>(
+      `/datasets/${encodeURIComponent(datasetId)}/labels`,
+      "GET",
+      undefined,
+      signal,
+    ),
   streamUrl: (id: string) =>
     `${apiBase}/sessions/${encodeURIComponent(id)}/stream`,
 };

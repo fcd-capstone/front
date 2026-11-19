@@ -1188,3 +1188,70 @@ input:disabled {
     font-size: 12px;
   }
 }
+.eventNodes {
+  display: block;
+  font-size: 10px;
+  line-height: 1.8;
+  color: #8fa5b7;
+  margin-top: 5px;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+.eventDisclaimer {
+  font-size: 10px;
+  color: #adbdcb;
+  padding: 16px 22px;
+  line-height: 1.8;
+}
+.eventDetail {
+  border-top: 1px solid #2a3a48;
+}
+.reportHistory {
+  border-left: 2px solid #3c6d5c;
+  padding: 10px 13px;
+  background: #15232c;
+}
+.reportHistory strong {
+  font-size: 11px;
+}
+.reportHistory small {
+  display: block;
+  color: #8fa4b5;
+  font-size: 10px;
+  margin-top: 6px;
+}
+.reportHistory p {
+  margin-top: 8px;
+  font-size: 12px;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.saveReport {
+  padding: 10px 15px;
+  background: #234b3e;
+  color: #9fe5ce;
+  border-color: #375f51;
+}
+.reportError {
+  font-size: 12px;
+  color: #f0b594;
+  line-height: 1.8;
+}
+.reportSuccess {
+  font-size: 12px;
+  color: #79dfb9;
+  line-height: 1.8;
+}
+.labelNote {
+  white-space: normal;
+  min-width: 220px;
+  max-width: 360px;
+  overflow-wrap: anywhere;
+  line-height: 1.8;
+}
+.eventDetail .eventDisclaimer {
+  padding: 16px 0 0;
+}
+.eventDetail .evidence {
+  overflow-wrap: anywhere;
+}

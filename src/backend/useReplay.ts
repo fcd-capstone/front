@@ -39,6 +39,8 @@ export function useReplay(sensor: SeriesSensor) {
     mutationFn: async (op: Operation): Promise<Frame> => {
       await client.cancelQueries({ queryKey: ["backend", "frame"] });
       await client.cancelQueries({ queryKey: ["backend", "series"] });
+      await client.cancelQueries({ queryKey: ["backend", "events"] });
+      await client.cancelQueries({ queryKey: ["backend", "event"] });
       const session =
         op.kind === "create"
           ? await api.create(op.dataset)
