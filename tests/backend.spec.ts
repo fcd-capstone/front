@@ -1,6 +1,6 @@
 import { test, expect } from "@playwright/test";
 const origin = "http://localhost:8000/api/v1";
-const start = 1794556800;
+const start = Date.UTC(2026, 10, 18, 14, 59, 30) / 1000;
 const labels = [
   "temp",
   "humid",
@@ -183,6 +183,18 @@ test("API replay controls, quality states, stale SSE exclusion and safe failures
     page.getByRole("heading", { name: "작업환경 관제", exact: true }),
   ).toBeVisible();
   await page.getByRole("button", { name: "새 세션 생성", exact: true }).click();
+  await expect(
+    page.getByRole("group", { name: "선택한 측정 시각", exact: true }),
+  ).toContainText("2026. 11. 18. · KST");
+  await expect(
+    page.getByRole("group", { name: "선택한 측정 시각", exact: true }),
+  ).toContainText("23시 59분 30초");
+  await expect(
+    page.getByRole("group", { name: "CSV 마지막 측정 시각", exact: true }),
+  ).toContainText("2026. 11. 19. · KST");
+  await expect(
+    page.getByRole("group", { name: "CSV 마지막 측정 시각", exact: true }),
+  ).toContainText("0시 59분 30초");
   await page.getByRole("button", { name: "재생", exact: true }).click();
   await expect(page.getByText("측정 상한", { exact: true })).toHaveCount(1);
   await expect(page.getByText("예열 중", { exact: true })).toHaveCount(2);
@@ -204,6 +216,23 @@ test("API replay controls, quality states, stale SSE exclusion and safe failures
   await expect(
     page.getByText("표시할 유효 데이터가 없습니다", { exact: true }),
   ).toBeVisible();
+  await expect(
+    page.getByRole("group", { name: "선택한 측정 시각", exact: true }),
+  ).toContainText("2026. 11. 19. · KST");
+  await expect(
+    page.getByRole("group", { name: "선택한 측정 시각", exact: true }),
+  ).toContainText("0시 29분 31초");
+  await page.setViewportSize({ width: 390, height: 844 });
+  expect(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth <= window.innerWidth,
+    ),
+  ).toBe(true);
+  await page
+    .getByRole("group", { name: "CSV 측정 시각", exact: true })
+    .scrollIntoViewIfNeeded();
+  await page.screenshot({ path: "artifacts/measurement-time-mobile.png" });
+  await page.setViewportSize({ width: 1440, height: 1080 });
   const old = snapshot();
   old.generation = 1;
   old.as_of_ts = start + 3000;

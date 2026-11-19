@@ -84,6 +84,13 @@ export default function BackendApp() {
       )
     : 0;
   const position = seek ?? Math.floor(elapsed);
+  const selectedTs =
+    session && !sessionGone
+      ? seek === null
+        ? (snapshot?.as_of_ts ?? session.virtual_ts)
+        : session.start_ts + seek
+      : null;
+  const endTs = session && !sessionGone ? session.end_ts : null;
   const error =
     operation.error ||
     replay.frame.error ||
@@ -358,9 +365,40 @@ export default function BackendApp() {
                 disabled={controlDisabled}
                 onChange={(e) => setSeek(Number(e.target.value))}
               />
-              <span className={styles.progressTime}>
-                {elapsedText(position)} <span>/ {elapsedText(duration)}</span>
-              </span>
+              <div
+                className={styles.measurementTimes}
+                aria-label="CSV 측정 시각"
+                role="group"
+              >
+                <div
+                  className={styles.measurementStamp}
+                  aria-label="선택한 측정 시각"
+                  role="group"
+                >
+                  <span>
+                    {selectedTs === null ? "선택 시각" : date(selectedTs)} · KST
+                  </span>
+                  <strong>
+                    {selectedTs === null ? "—" : time(selectedTs)}
+                  </strong>
+                </div>
+                <span
+                  className={styles.measurementSeparator}
+                  aria-hidden="true"
+                >
+                  /
+                </span>
+                <div
+                  className={styles.measurementStamp}
+                  aria-label="CSV 마지막 측정 시각"
+                  role="group"
+                >
+                  <span>
+                    {endTs === null ? "마지막 측정" : date(endTs)} · KST
+                  </span>
+                  <strong>{endTs === null ? "—" : time(endTs)}</strong>
+                </div>
+              </div>
               <button
                 className={styles.seekButton}
                 disabled={controlDisabled || seek === null}
